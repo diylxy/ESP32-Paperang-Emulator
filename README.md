@@ -2,7 +2,7 @@
 
 ### 用ESP32 DIY 热敏打印机，模拟Paperang/喵喵机通信协议，可以通过蓝牙连接手机，接收、打印Paperang APP/喵喵机APP/作业帮APP发送的打印数据
 
-![效果](https://github.com/1452206376/ESP32-Paperang-Emulator/images/main.png )
+![封面](https://github.com/1452206376/ESP32-Paperang-Emulator/images/main.png )
 
 [Bilibili视频链接](https://www.bilibili.com/video/BV1v54y127xZ )
 
