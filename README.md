@@ -1,5 +1,9 @@
 # ESP32 Paperang Emulator
 
+# 目前原理图有一处错误
+
+#整流二极管要用ss34/1n5822这类的大电流肖特基二极管，不能用1n4007！！！pcb没问题
+
 ### 用ESP32 DIY 热敏打印机，模拟Paperang/喵喵机通信协议，可以通过蓝牙连接手机，接收、打印Paperang APP/喵喵机APP/作业帮APP发送的打印数据
 
 ![封面](https://github.com/1452206376/ESP32-Paperang-Emulator/blob/master/images/main.png )
