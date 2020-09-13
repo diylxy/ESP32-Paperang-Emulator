@@ -152,17 +152,17 @@ void paperang_process_data()
   switch (packHeader.packType)
   {
     case PRINT_DATA:
-    /*
-      //while (cacheLock);
-      //cacheLock = 1;
-      memcpy(printDataCache + printDataCacheHead, dataPack_read, packHeader.dataLen);
-      printDataCacheHead += packHeader.dataLen;
-      if (printDataCacheHead >= PRINT_DATA_CACHE_SIZE)
-      {
-        printDataCacheHead = 0;
-        cacheOverflowed = printDataCacheHead - PRINT_DATA_CACHE_SIZE;
-      }
-      //cacheLock = 0;*/
+      /*
+        //while (cacheLock);
+        //cacheLock = 1;
+        memcpy(printDataCache + printDataCacheHead, dataPack_read, packHeader.dataLen);
+        printDataCacheHead += packHeader.dataLen;
+        if (printDataCacheHead >= PRINT_DATA_CACHE_SIZE)
+        {
+          printDataCacheHead = 0;
+          cacheOverflowed = printDataCacheHead - PRINT_DATA_CACHE_SIZE;
+        }
+        //cacheLock = 0;*/
       return;
     case SET_CRC_KEY:
       tmp32 = dataPack_read[0] << 24 + dataPack_read[1] << 16 + dataPack_read[2] << 8 + dataPack_read[3];
@@ -207,8 +207,10 @@ void paperang_process_data()
       paperang_send_msg(SENT_HEAT_DENSITY, &heat_density, 1);
       break;
     case FEED_LINE:
-      startPrint();
-      goFront(200, MOTOR_TIME);
+      if (printDataCount / 48 != 0) {
+        startPrint();
+        goFront(200, MOTOR_TIME);
+      }
       printDataCount = 0;
       break;
     default:
@@ -217,8 +219,8 @@ void paperang_process_data()
   paperang_send_ack(packHeader.packType);
 }
 /*
-void paperang_copy(void *pvParameters)
-{
+  void paperang_copy(void *pvParameters)
+  {
   (void) pvParameters;
   esp_task_wdt_init(1024000, false);
   uint32_t newDataCount;
@@ -253,7 +255,7 @@ void paperang_copy(void *pvParameters)
     }
     //vTaskDelay(20);
   }
-}
+  }
 */
 void paperang_core0()
 {
@@ -282,6 +284,32 @@ void paperang_app()
   esp_bt_gap_set_cod(cod, ESP_BT_INIT_COD);
   crc32.init(0x35769521);
   packHeader.dataLen = 0;
+  Serial.println();
+  Serial.println("3秒内输入要测试的STB序号开始打印测试页（1-6）: ");
+  delay(3000);
+  if(Serial.available())
+  {
+    char chr = Serial.read();
+    if(chr >= '1' && chr <= '6')
+    {
+      chr -= 0x30;
+      testPage((uint8_t)chr-1);
+    }
+    else if(chr == 'a')              //确认STB位置
+    {
+      testSTB();
+    }
+    else if(chr == 'A')              //确认STB位置
+    {
+      testPage(0);
+      testPage(1);
+      testPage(2);
+      testPage(3);
+      testPage(4);
+      testPage(5);
+    }
+    Serial.flush();
+  }
   while (1) {
     if (SerialBT.available()) {
       c = SerialBT.read();
@@ -306,7 +334,7 @@ void paperang_app()
         {
           printData[printDataCount++] = c;
           while (i) {
-            while(SerialBT.available() == 0);
+            while (SerialBT.available() == 0);
             printData[printDataCount++] = SerialBT.read();
             --i;
           }

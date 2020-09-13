@@ -26,8 +26,8 @@
 #define PIN_STB2 25
 #define PIN_STB3 33
 #define PIN_STB4 32
-#define PIN_STB5 35		//这里可能需要修改
-#define PIN_STB6 34
+#define PIN_STB5 14
+#define PIN_STB6 27
 
 #define PIN_BUZZER 15
 #define BUZZER_FREQ 2000
@@ -38,19 +38,19 @@
 #define PIN_VHEN 2
 
 #define MOTOR_STEP_PER_LINE 3
-#define PRINT_TIME 1500
+#define PRINT_TIME 1700
 #define PRINT_TIME_ 200
 #define MOTOR_TIME 4000
 float addTime[6] = {0};
 float tmpAddTime = 0;
 //根据打印头打印效果修改
 #define kAddTime 0.001      //点数-增加时间系数, 见sendData函数
-#define STB1_ADDTIME 0      //STB1额外打印时间,下面类似, 单位: 微秒
-#define STB2_ADDTIME 0      //根据打印头实际情况修改
-#define STB3_ADDTIME 0
+#define STB1_ADDTIME 100    //STB1额外打印时间,下面类似, 单位: 微秒
+#define STB2_ADDTIME 100      //根据打印头实际情况修改
+#define STB3_ADDTIME -100
 #define STB4_ADDTIME 0
-#define STB5_ADDTIME 0
-#define STB6_ADDTIME 0
+#define STB5_ADDTIME 700
+#define STB6_ADDTIME 800
 extern uint8_t heat_density;
 //WebServer server(80);
 
@@ -122,7 +122,7 @@ void sendData(uint8_t *dataPointer)
     for (uint8_t j = 0; j < 8; ++j)
     {
       addTime[i] += dataPointer[i * 8 + j];
-    } 
+    }
     tmpAddTime = addTime[i] * addTime[i];
     addTime[i] = kAddTime * tmpAddTime;
   }
@@ -216,6 +216,90 @@ void startPrint()
   clearData();
   printDataCount = 0;
   Serial.println("[INFO]打印完成");
+  digitalWrite(PIN_VHEN, 0);
+  startBeep();
+  delay(100);
+  stopBeep();
+  delay(50);
+  startBeep();
+  delay(100);
+  stopBeep();
+}
+
+void startPrint(uint8_t stb)
+{
+  static unsigned char motor_add = 0;
+  startBeep();
+  delay(700);
+  stopBeep();
+
+  Serial.printf("[INFO]正在打印STB%c\n", stb + 0x31);
+  Serial.printf("[INFO]共%u行\n", printDataCount / 48);
+  digitalWrite(PIN_VHEN, 1);
+  for (uint32_t pointer = 0; pointer < printDataCount; pointer += 48)
+  {
+
+    motor_add ++;
+    if (motor_add != 40)
+    {
+      delayMicroseconds((PRINT_TIME) * ((double)heat_density / 100));
+      goFront1();
+    }
+    else
+    {
+      motor_add = 0;
+    }
+    clearAddTime();
+    sendData(printData + pointer);
+    switch (stb)
+    {
+      case 0:
+        digitalWrite(PIN_STB1, 1);
+        delayMicroseconds((PRINT_TIME + addTime[0] + STB1_ADDTIME) * ((double)heat_density / 100));
+        digitalWrite(PIN_STB1, 0);
+        delayMicroseconds(PRINT_TIME_);
+        break;
+      case 1:
+        digitalWrite(PIN_STB2, 1);
+        delayMicroseconds((PRINT_TIME + addTime[1] + STB2_ADDTIME) * ((double)heat_density / 100));
+        digitalWrite(PIN_STB2, 0);
+        delayMicroseconds(PRINT_TIME_);
+        break;
+      case 2:
+        digitalWrite(PIN_STB3, 1);
+        delayMicroseconds((PRINT_TIME + addTime[2] + STB3_ADDTIME) * ((double)heat_density / 100));
+        digitalWrite(PIN_STB3, 0);
+        delayMicroseconds(PRINT_TIME_);
+        break;
+      case 3:
+        digitalWrite(PIN_STB4, 1);
+        delayMicroseconds((PRINT_TIME + addTime[3] + STB4_ADDTIME) * ((double)heat_density / 100));
+        digitalWrite(PIN_STB4, 0);
+        delayMicroseconds(PRINT_TIME_);
+        break;
+      case 4:
+        digitalWrite(PIN_STB5, 1);
+        delayMicroseconds((PRINT_TIME + addTime[4] + STB5_ADDTIME) * ((double)heat_density / 100));
+        digitalWrite(PIN_STB5, 0);
+        delayMicroseconds(PRINT_TIME_);
+        break;
+      case 5:
+        digitalWrite(PIN_STB6, 1);
+        delayMicroseconds((PRINT_TIME + addTime[5] + STB6_ADDTIME) * ((double)heat_density / 100));
+        digitalWrite(PIN_STB6, 0);
+        delayMicroseconds(PRINT_TIME_);
+        break;
+    }
+    goFront(3, 3000);
+  }
+
+  digitalWrite(PIN_MOTOR_AP, 0);
+  digitalWrite(PIN_MOTOR_AM, 0);
+  digitalWrite(PIN_MOTOR_BP, 0);
+  digitalWrite(PIN_MOTOR_BM, 0);
+  clearAddTime();
+  clearSTB();
+  clearData();
   digitalWrite(PIN_VHEN, 0);
   startBeep();
   delay(100);
@@ -338,6 +422,97 @@ void setup(void) {
   stopBeep();
   //paperang_core0();
   paperang_app();
+}
+
+//打印头测试
+void testPage(uint8_t stb)
+{
+  Serial.println("开始打印 颜色深度-同时打印点数 测试页\n可根据此页调整加热时间常数");
+  uint8_t printchr[8] = {0};
+  uint8_t i, j, k;
+  uint8_t dots, dotsnow;
+  printDataCount = 0;
+  for (uint32_t cleardata = 0; cleardata < 102400; ++cleardata)
+  {
+    printData[cleardata] = 0;
+  }
+  for (uint8_t dots = 0; dots < 64; dots += 4)
+  {
+    for (k = 0; k < 5; ++k)
+    {
+      dotsnow = 0;
+      for (i = 0; i < 8; ++i)
+      {
+        printchr[i] = 0;
+      }
+
+      for (i = 0; i < 8; ++i)
+      {
+        for (j = 0; j < 8; ++j)
+        {
+          if (dotsnow == dots)
+          {
+            break;
+          }
+          dotsnow++;
+          printchr[i] |= (0x80 >> j);
+        }
+      }
+      memcpy(printData + printDataCount + 8, printchr, 8);
+      memcpy(printData + printDataCount + 16, printchr, 8);
+      memcpy(printData + printDataCount + 24, printchr, 8);
+      memcpy(printData + printDataCount + 32, printchr, 8);
+      memcpy(printData + printDataCount + 40, printchr, 8);
+      memcpy(printData + printDataCount + 48, printchr, 8);
+      printDataCount += 48;
+    }
+    printDataCount += 48 * 3;
+  }
+  startBeep();
+  delay(100);
+  stopBeep();
+  delay(50);
+  startBeep();
+  delay(200);
+  stopBeep();
+  delay(50);
+  startBeep();
+  delay(100);
+  stopBeep();
+  delay(50);
+  startPrint(stb);
+  goFront(40 * 4, MOTOR_TIME);
+  printDataCount = 0;
+}
+
+void testSTB()
+{
+  Serial.println("开始打印打印头选通引脚(Strobe)测试页\n顺序:开头  1  2  3  4  5  6");
+  for (uint32_t cleardata = 0; cleardata < 48*5; ++cleardata)
+  {
+    printData[cleardata] = 0xff;
+  }
+  printDataCount = 48 * 5;
+  startPrint(0);
+  startPrint(1);
+  startPrint(2);
+  startPrint(3);
+  startPrint(4);
+  startPrint(5);
+  startBeep();
+  delay(200);
+  stopBeep();
+  delay(50);
+  startBeep();
+  delay(200);
+  stopBeep();
+  delay(50);
+  startBeep();
+  delay(100);
+  stopBeep();
+  delay(50);
+  goFront(40 * 4, MOTOR_TIME);
+  printDataCount = 0;
 }
 
 void loop(void) {
