@@ -1,7 +1,20 @@
 # ESP32 Paperang Emulator
 
-### 用ESP32 DIY 热敏打印机，模拟Paperang/喵喵机通信协议，可以通过蓝牙连接手机，接收、打印Paperang APP/喵喵机APP/作业帮APP发送的打印数据
+#### 用ESP32 DIY 热敏打印机，模拟Paperang/喵喵机通信协议，可以通过蓝牙连接手机，接收、打印Paperang APP/喵喵机APP/作业帮APP发送的打印数据
 
+## 提示  2021-8-28
+#### 这个版本过于不完善，我也在尝试制作2.0版，但是因为学业原因可能需要*很久*，所以推荐两个优秀的二次开发项目，如果资金充足可以考虑：  
+[Mao喵喵机热敏打印机--樱猫](https://www.oshwhub.com/SakuraNeko/mao-re-min-da-yin-ji)  
+[喵喵机-热敏打印机-改--freedom789](https://www.oshwhub.com/freedom789/print-fpc1)  
+因为我比较菜，又要考虑兼容性问题，所以就没有画fpc，这个项目就当是模板吧。这里给各位二次开发者一些建议：  
+电池最好更换为2节串联，不要用原版升压芯片，或者电池加超级电容，不然带不动；  
+电机驱动可以考虑a4988驱动芯片，不要采用恒压驱动的方式，那样的话电机会非常热；  
+原版电路mos管驱动可能有问题，但是能用，这个保护电路不可以省略，不然上电esp32某些引脚默认会上拉或下拉，stb就会激活，烧出一条黑线；  
+esp32不需要wrover，根据我的计算60k缓冲区足够打印1m长，把ps_malloc改成malloc就行。  
+欢迎大家二次开发并开源，只要注明一下原作者就可以。  
+下面是正文  
+
+---
 ![封面](https://github.com/1452206376/ESP32-Paperang-Emulator/blob/master/images/main.png )
 
 [Bilibili视频链接](https://www.bilibili.com/video/BV1v54y127xZ )
